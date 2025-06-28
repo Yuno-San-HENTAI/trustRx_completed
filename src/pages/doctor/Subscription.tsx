@@ -2,69 +2,73 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Check, CreditCard, Shield, HardDrive, Clock, RefreshCcw } from 'lucide-react';
 
-// Subscription plan data
+// Subscription plan data - synced with pricing page (doctor-focused)
 const subscriptionPlans = [
   {
     id: 'free',
     name: 'Free',
-    price: 0,
+    price: { monthly: 0, yearly: 0 },
     storageLimit: 2, // in GB
-    billingPeriod: 'monthly',
+    description: 'Perfect for getting started with basic practice management',
     features: [
       '2GB secure storage',
-      'Basic record management',
-      'Doctor discovery',
-      'Appointment requests',
-      'Blockchain verification'
+      'Basic patient record access',
+      'Basic blockchain verification',
+      'Patient discovery',
+      '5 appointment slots per month',
+      'Email support',
+      'Mobile responsive access'
+    ],
+    limitations: [
+      'Limited to 5 appointments per month',
+      'Basic support only',
+      'No advanced analytics'
     ]
   },
   {
-    id: 'basic',
-    name: 'Basic',
-    price: 2.99,
-    storageLimit: 10, // in GB
-    billingPeriod: 'monthly',
+    id: 'professional',
+    name: 'Professional',
+    price: { monthly: 19.99, yearly: 199.99 },
+    storageLimit: 100, // in GB
+    description: 'Enhanced features for active medical practice',
+    popular: true,
     features: [
-      '10GB secure storage',
-      'Advanced record management',
-      'Doctor discovery',
-      'Appointment scheduling',
-      'Blockchain verification',
-      'Email notifications'
-    ]
+      '100GB secure storage',
+      'Unlimited patient records',
+      'Advanced blockchain verification',
+      'Priority patient discovery',
+      'Unlimited appointment slots',
+      'Priority email & chat support',
+      'Advanced search & filtering',
+      'Patient timeline view',
+      'Export & sharing tools',
+      'Practice analytics',
+      'Appointment management',
+      'Patient communication tools'
+    ],
+    limitations: []
   },
   {
-    id: 'premium',
-    name: 'Premium',
-    price: 9.99,
-    storageLimit: 50, // in GB
-    billingPeriod: 'monthly',
-    features: [
-      '50GB secure storage',
-      'Priority support',
-      'Verified doctor contacts',
-      'Family member accounts',
-      'Advanced appointment features',
-      'Health timeline',
-      'Email & SMS notifications'
-    ]
-  },
-  {
-    id: 'unlimited',
-    name: 'Unlimited',
-    price: 15.99,
+    id: 'enterprise',
+    name: 'Enterprise',
+    price: { monthly: 49.99, yearly: 499.99 },
     storageLimit: -1, // unlimited
-    billingPeriod: 'monthly',
+    description: 'Complete practice management for medical institutions',
     features: [
+      'Everything in Professional',
       'Unlimited storage',
-      'Premium support',
-      'All premium features',
-      'Multiple family members',
-      'Priority appointments',
-      'Health analytics',
-      'Custom categories',
-      'API access'
-    ]
+      'Multi-doctor practice support',
+      'Advanced practice dashboard',
+      'Staff management tools',
+      'Custom integrations',
+      'Advanced reporting',
+      'Dedicated account manager',
+      'Priority phone support',
+      'Custom branding',
+      'API access',
+      'HIPAA compliance tools'
+    ],
+    limitations: []
   }
 ];
 
@@ -80,9 +84,10 @@ const billingHistory = [
 ];
 
 // Helper functions moved outside component scope
-const formatPrice = (price: number) => {
-  if (price === 0) return 'Free';
-  return `$${price.toFixed(2)}`;
+const formatPrice = (price: { monthly: number; yearly: number }, billingPeriod: 'monthly' | 'yearly') => {
+  const amount = billingPeriod === 'monthly' ? price.monthly : price.yearly;
+  if (amount === 0) return 'Free';
+  return `$${amount.toFixed(2)}`;
 };
 
 const formatStorageLimit = (limit: number) => {
@@ -93,6 +98,13 @@ const formatStorageLimit = (limit: number) => {
 const formatDate = (dateString: string) => {
   const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
   return new Date(dateString).toLocaleDateString(undefined, options);
+};
+
+const calculateSavings = (price: { monthly: number; yearly: number }) => {
+  if (price.monthly === 0) return 0;
+  const yearlyEquivalent = price.monthly * 12;
+  const savings = yearlyEquivalent - price.yearly;
+  return Math.round((savings / yearlyEquivalent) * 100);
 };
 
 const DoctorSubscription = () => {
@@ -131,7 +143,7 @@ const DoctorSubscription = () => {
             <div>
               <h3 className="text-lg font-semibold">{currentPlanDetails?.name} Plan</h3>
               <p className="text-neutral-600">
-                {formatPrice(currentPlanDetails?.price || 0)}/{currentPlanDetails?.billingPeriod}
+                {formatPrice(currentPlanDetails?.price || { monthly: 0, yearly: 0 }, billingPeriod)}/{billingPeriod}
               </p>
             </div>
             
@@ -142,7 +154,7 @@ const DoctorSubscription = () => {
               >
                 Billing History
               </button>
-              {currentPlan !== 'unlimited' && (
+              {currentPlan !== 'enterprise' && (
                 <button 
                   className="btn-primary"
                   onClick={() => setShowUpgradeModal(true)}
@@ -155,6 +167,29 @@ const DoctorSubscription = () => {
           
           {/* Storage usage */}
           <div className="mt-6">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center">
+                <HardDrive size={18} className="text-primary-500 mr-2" />
+                <span className="font-medium">Storage Usage</span>
+              </div>
+              <span className="text-sm text-neutral-500">
+                0.5 GB / {formatStorageLimit(currentPlanDetails?.storageLimit || 0)}
+              </span>
+            </div>
+            <div className="progress-bar">
+              <div 
+                className="progress-value" 
+                style={{ 
+                  width: currentPlanDetails?.storageLimit === -1 
+                    ? '10%' 
+                    : `${(0.5 / currentPlanDetails?.storageLimit!) * 100}%` 
+                }}
+              ></div>
+            </div>
+          </div>
+          
+          {/* Plan benefits */}
+          <div className="mt-6">
             <div className="flex items-center mb-4">
               <Shield size={18} className="text-primary-500 mr-2" />
               <span className="font-medium">Plan Benefits</span>
@@ -164,7 +199,7 @@ const DoctorSubscription = () => {
               {currentPlanDetails?.features.map((feature, index) => (
                 <div key={index} className="flex items-start">
                   <Check size={16} className="text-primary-500 mr-2 mt-0.5" />
-                  <span className="text-neutral-700">{feature}</span>
+                  <span className="text-neutral-700 text-sm">{feature}</span>
                 </div>
               ))}
             </div>
@@ -215,7 +250,7 @@ const DoctorSubscription = () => {
                         {item.plan}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">
-                        {formatPrice(item.amount)}
+                        ${item.amount.toFixed(2)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-success-100 text-success-800">
@@ -256,12 +291,12 @@ const DoctorSubscription = () => {
               onClick={() => setBillingPeriod('yearly')}
             >
               Yearly
-              <span className="ml-1 text-xs text-success-600 font-medium">Save 20%</span>
+              <span className="ml-1 text-xs text-success-600 font-medium">Save up to 17%</span>
             </button>
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {subscriptionPlans.map((plan) => (
             <PlanCard 
               key={plan.id}
@@ -325,7 +360,7 @@ const DoctorSubscription = () => {
                     >
                       <div>
                         <span className="font-medium">{plan.name}</span>
-                        <span className="ml-2">{formatPrice(plan.price)}/{plan.billingPeriod}</span>
+                        <span className="ml-2">{formatPrice(plan.price, billingPeriod)}/{billingPeriod}</span>
                       </div>
                       {currentPlan === plan.id && (
                         <span className="text-primary-500 text-sm font-medium">Current Plan</span>
@@ -347,7 +382,7 @@ const DoctorSubscription = () => {
                     <div className="border-t border-neutral-200 my-2 pt-2">
                       <div className="flex justify-between font-medium">
                         <span>New Price</span>
-                        <span>{formatPrice(subscriptionPlans.find(p => p.id === selectedPlan)?.price || 0)}/{billingPeriod}</span>
+                        <span>{formatPrice(subscriptionPlans.find(p => p.id === selectedPlan)?.price || { monthly: 0, yearly: 0 }, billingPeriod)}/{billingPeriod}</span>
                       </div>
                     </div>
                   </div>
@@ -409,14 +444,17 @@ interface PlanCardProps {
 }
 
 const PlanCard: React.FC<PlanCardProps> = ({ plan, isCurrentPlan, billingPeriod, onSelectPlan }) => {
-  // Calculate yearly price (20% discount)
-  const yearlyPrice = plan.price * 0.8 * 12;
-  
   return (
     <div className={`border rounded-xl overflow-hidden transition-all hover:shadow-md ${
       isCurrentPlan ? 'border-primary-500 shadow-sm' : 'border-neutral-200'
-    }`}>
-      {isCurrentPlan && (
+    } ${plan.popular ? 'ring-2 ring-primary-500' : ''}`}>
+      {plan.popular && (
+        <div className="bg-primary-500 text-white text-center py-1 text-sm font-medium">
+          Most Popular
+        </div>
+      )}
+      
+      {isCurrentPlan && !plan.popular && (
         <div className="bg-primary-500 text-white text-center py-1 text-sm font-medium">
           Current Plan
         </div>
@@ -424,30 +462,54 @@ const PlanCard: React.FC<PlanCardProps> = ({ plan, isCurrentPlan, billingPeriod,
       
       <div className="p-6">
         <h3 className="text-xl font-semibold mb-2">{plan.name}</h3>
+        <p className="text-neutral-600 text-sm mb-4">{plan.description}</p>
+        
         <div className="mb-4">
           <span className="text-3xl font-bold">
-            {billingPeriod === 'monthly' 
-              ? formatPrice(plan.price) 
-              : formatPrice(yearlyPrice)}
+            {formatPrice(plan.price, billingPeriod)}
           </span>
-          <span className="text-neutral-500 ml-1">
-            /{billingPeriod}
-          </span>
+          {plan.price.monthly > 0 && (
+            <span className="text-neutral-500 ml-1">
+              /{billingPeriod}
+            </span>
+          )}
+          {billingPeriod === 'yearly' && plan.price.monthly > 0 && (
+            <div className="text-sm text-success-600 font-medium mt-1">
+              Save {calculateSavings(plan.price)}% annually
+            </div>
+          )}
         </div>
         
         <ul className="space-y-3 mb-6">
           {plan.features.map((feature, index) => (
             <li key={index} className="flex items-start">
               <Check size={18} className="text-primary-500 mr-2 shrink-0" />
-              <span>{feature}</span>
+              <span className="text-sm">{feature}</span>
             </li>
           ))}
         </ul>
+        
+        {/* Limitations */}
+        {plan.limitations.length > 0 && (
+          <div className="border-t border-neutral-200 pt-4 mb-6">
+            <h4 className="text-sm font-medium text-neutral-500 mb-2">Limitations:</h4>
+            <div className="space-y-1">
+              {plan.limitations.map((limitation, limitIndex) => (
+                <div key={limitIndex} className="flex items-start">
+                  <div className="h-2 w-2 bg-neutral-400 rounded-full mr-2 mt-1.5 flex-shrink-0" />
+                  <span className="text-xs text-neutral-500">{limitation}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         
         <button 
           className={`w-full ${
             isCurrentPlan 
               ? 'btn-ghost cursor-default'
+              : plan.popular
+              ? 'bg-primary-500 text-white hover:bg-primary-600 py-3 px-6 rounded-lg font-medium transition-all'
               : 'btn-primary'
           }`}
           onClick={() => !isCurrentPlan && onSelectPlan(plan.id)}

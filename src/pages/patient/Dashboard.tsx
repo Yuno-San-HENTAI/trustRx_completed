@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FileText, User, CalendarClock, ShieldCheck, ArrowRight, Wallet, ExternalLink } from 'lucide-react';
+import { FileText, User, CalendarClock, ShieldCheck, ArrowRight, Wallet, ExternalLink, Hash } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
 
@@ -9,9 +9,30 @@ const PatientDashboard = () => {
   const navigate = useNavigate();
   
   const [recentRecords, setRecentRecords] = useState([
-    { id: '1', name: 'Annual Physical Results', date: '2023-06-15', doctor: 'Dr. Sarah Johnson', type: 'labResults' },
-    { id: '2', name: 'Chest X-Ray', date: '2023-04-22', doctor: 'Dr. Michael Chen', type: 'imaging' },
-    { id: '3', name: 'Allergy Test Results', date: '2023-02-10', doctor: 'Dr. Emily Rodriguez', type: 'labResults' },
+    { 
+      id: '1', 
+      name: 'Annual Physical Results', 
+      date: '2023-06-15', 
+      doctor: 'Dr. Sarah Johnson', 
+      type: 'labResults',
+      blockchainTx: 'TXID4K7QJXM2VWZN8PLRST9UABCDEF3GHIJK5LMNOP6QRSTU7VWXYZ8'
+    },
+    { 
+      id: '2', 
+      name: 'Chest X-Ray', 
+      date: '2023-04-22', 
+      doctor: 'Dr. Michael Chen', 
+      type: 'imaging',
+      blockchainTx: 'TXID9MNOP2QRSTU7VWXYZ8ABCDEF3GHIJK5LMNOP6QRSTU7VWXYZ8ABC'
+    },
+    { 
+      id: '3', 
+      name: 'Allergy Test Results', 
+      date: '2023-02-10', 
+      doctor: 'Dr. Emily Rodriguez', 
+      type: 'labResults',
+      blockchainTx: 'TXIDDEF3GHIJK5LMNOP6QRSTU7VWXYZ8ABCDEF3GHIJK5LMNOP6QRSTU'
+    },
   ]);
   
   const [upcomingAppointments, setUpcomingAppointments] = useState([
@@ -24,6 +45,12 @@ const PatientDashboard = () => {
   
   const getStoragePercentage = () => {
     return (storageUsed / storageLimit) * 100;
+  };
+
+  // Open Algorand explorer for transaction
+  const openBlockchainExplorer = (txId: string) => {
+    const explorerUrl = `https://testnet.algoexplorer.io/tx/${txId}`;
+    window.open(explorerUrl, '_blank');
   };
   
   // Animation variants
@@ -139,9 +166,24 @@ const PatientDashboard = () => {
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <h4 className="font-medium">{record.name}</h4>
-                  <span className="text-xs text-neutral-500">{formatDate(record.date)}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-neutral-500">{formatDate(record.date)}</span>
+                    <button
+                      onClick={() => openBlockchainExplorer(record.blockchainTx)}
+                      className="p-1 text-neutral-400 hover:text-primary-500 transition-colors"
+                      title="View on Algorand Explorer"
+                    >
+                      <Hash size={14} />
+                    </button>
+                  </div>
                 </div>
-                <p className="text-sm text-neutral-500">{record.doctor}</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-neutral-500">{record.doctor}</p>
+                  <div className="flex items-center text-xs text-success-600">
+                    <ShieldCheck size={12} className="mr-1" />
+                    <span>Blockchain Verified</span>
+                  </div>
+                </div>
               </div>
             </div>
           ))}
@@ -225,15 +267,18 @@ const PatientDashboard = () => {
           ></div>
         </div>
         
-        <p className="mt-4 text-sm text-neutral-500">
-          You're currently on the <span className="font-medium">Free</span> plan. 
+        <div className="mt-4 flex items-center justify-between">
+          <p className="text-sm text-neutral-500">
+            You're currently on the <span className="font-medium">Free</span> plan.
+          </p>
           <button 
-            onClick={() => navigate('/patient/subscription')}
-            className="text-primary-500 hover:text-primary-600 ml-1"
+            onClick={() => window.open('https://testnet.algoexplorer.io', '_blank')}
+            className="text-primary-500 hover:text-primary-600 text-sm flex items-center"
           >
-            Upgrade to get more storage and premium features.
+            <Hash size={14} className="mr-1" />
+            View on Algorand
           </button>
-        </p>
+        </div>
       </motion.div>
     </motion.div>
   );

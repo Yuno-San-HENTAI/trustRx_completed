@@ -16,11 +16,13 @@ import {
   ExternalLink,
   Eye,
   Copy,
-  Check
+  Check,
+  Hash
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { sha256 } from 'js-sha256';
 import { storeHashOnBlockchain } from '../../config/algorand';
+import BlockchainVerification from '../../components/BlockchainVerification';
 
 const MedicalRecords = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,6 +37,8 @@ const MedicalRecords = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareEmail, setShareEmail] = useState('');
   const [copiedStates, setCopiedStates] = useState<{[key: string]: boolean}>({});
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [verificationRecord, setVerificationRecord] = useState<any>(null);
   
   // Mock data for medical records
   const [records, setRecords] = useState([
@@ -49,8 +53,8 @@ const MedicalRecords = () => {
       url: '#',
       thumbnailUrl: '#',
       blockchainVerification: {
-        transactionId: 'algo-tx-1687689000000-abc123def',
-        hash: '0xabcdef123456789',
+        transactionId: 'TXID4K7QJXM2VWZN8PLRST9UABCDEF3GHIJK5LMNOP6QRSTU7VWXYZ8',
+        hash: '0xabcdef123456789012345678901234567890abcdef123456789012345678901234',
         timestamp: '2023-06-15T10:30:00Z',
         verified: true
       }
@@ -66,8 +70,8 @@ const MedicalRecords = () => {
       url: '#',
       thumbnailUrl: '#',
       blockchainVerification: {
-        transactionId: 'algo-tx-1682179200000-def456ghi',
-        hash: '0xfedcba987654321',
+        transactionId: 'TXID9MNOP2QRSTU7VWXYZ8ABCDEF3GHIJK5LMNOP6QRSTU7VWXYZ8ABC',
+        hash: '0xfedcba987654321098765432109876543210fedcba987654321098765432109876',
         timestamp: '2023-04-22T14:15:00Z',
         verified: true
       }
@@ -83,8 +87,8 @@ const MedicalRecords = () => {
       url: '#',
       thumbnailUrl: '#',
       blockchainVerification: {
-        transactionId: 'algo-tx-1676016000000-ghi789jkl',
-        hash: '0x123456789abcdef',
+        transactionId: 'TXIDDEF3GHIJK5LMNOP6QRSTU7VWXYZ8ABCDEF3GHIJK5LMNOP6QRSTU',
+        hash: '0x123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01',
         timestamp: '2023-02-10T09:45:00Z',
         verified: true
       }
@@ -100,8 +104,8 @@ const MedicalRecords = () => {
       url: '#',
       thumbnailUrl: '#',
       blockchainVerification: {
-        transactionId: 'algo-tx-1672876800000-jkl012mno',
-        hash: '0xdef1234567890abc',
+        transactionId: 'TXIDGHIJK5LMNOP6QRSTU7VWXYZ8ABCDEF3GHIJK5LMNOP6QRSTU7VWX',
+        hash: '0xdef1234567890abc1234567890def1234567890abc1234567890def1234567890',
         timestamp: '2023-01-05T16:20:00Z',
         verified: true
       }
@@ -250,6 +254,12 @@ const MedicalRecords = () => {
     alert(`Preview functionality would open here for: ${record.fileName}`);
   };
 
+  // Handle blockchain verification view
+  const handleViewVerification = (record: any) => {
+    setVerificationRecord(record);
+    setShowVerificationModal(true);
+  };
+
   // Copy to clipboard
   const copyToClipboard = async (text: string, key: string) => {
     try {
@@ -388,26 +398,27 @@ const MedicalRecords = () => {
                   {/* Verification badge */}
                   <div className="flex-shrink-0 self-center">
                     {record.blockchainVerification?.verified && (
-                      <div 
-                        className="verified-badge flex items-center cursor-pointer" 
-                        title={`Blockchain verified: ${record.blockchainVerification.transactionId}`}
-                        onClick={() => copyToClipboard(record.blockchainVerification.transactionId, `tx-${record.id}`)}
+                      <button 
+                        className="verified-badge flex items-center cursor-pointer hover:bg-success-200 transition-colors" 
+                        title="View blockchain verification details"
+                        onClick={() => handleViewVerification(record)}
                       >
                         <Shield size={14} className="mr-1" />
-                        {copiedStates[`tx-${record.id}`] ? (
-                          <>
-                            <Check size={14} className="mr-1" />
-                            Copied!
-                          </>
-                        ) : (
-                          'Verified'
-                        )}
-                      </div>
+                        <span>Verified</span>
+                        <ExternalLink size={12} className="ml-1" />
+                      </button>
                     )}
                   </div>
                   
                   {/* Actions */}
                   <div className="flex gap-2 self-center">
+                    <button 
+                      className="p-2 text-neutral-500 hover:text-primary-500 hover:bg-neutral-100 rounded-full transition-colors" 
+                      title="View blockchain verification"
+                      onClick={() => handleViewVerification(record)}
+                    >
+                      <Hash size={18} />
+                    </button>
                     <button 
                       className="p-2 text-neutral-500 hover:text-primary-500 hover:bg-neutral-100 rounded-full transition-colors" 
                       title="View/Preview"
@@ -633,6 +644,62 @@ const MedicalRecords = () => {
                 >
                   {isUploading ? 'Uploading...' : 'Upload & Verify'}
                 </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Blockchain Verification Modal */}
+      <AnimatePresence>
+        {showVerificationModal && verificationRecord && (
+          <motion.div 
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div 
+              className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+            >
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold">Blockchain Verification</h3>
+                  <button
+                    onClick={() => setShowVerificationModal(false)}
+                    className="text-neutral-400 hover:text-neutral-600"
+                  >
+                    <FileX size={24} />
+                  </button>
+                </div>
+                
+                <div className="mb-6 p-4 bg-neutral-50 rounded-lg">
+                  <div className="flex items-center mb-2">
+                    <FileText size={20} className="text-primary-500 mr-2" />
+                    <span className="font-medium">{verificationRecord.fileName}</span>
+                  </div>
+                  <p className="text-sm text-neutral-600">{verificationRecord.description}</p>
+                </div>
+
+                <BlockchainVerification
+                  transactionId={verificationRecord.blockchainVerification.transactionId}
+                  hash={verificationRecord.blockchainVerification.hash}
+                  timestamp={verificationRecord.blockchainVerification.timestamp}
+                  verified={verificationRecord.blockchainVerification.verified}
+                />
+
+                <div className="mt-6 p-4 bg-primary-50 border border-primary-200 rounded-lg">
+                  <h4 className="font-semibold text-primary-800 mb-2">What does this mean?</h4>
+                  <ul className="text-sm text-primary-700 space-y-1">
+                    <li>• Your file has been cryptographically hashed and stored on the Algorand blockchain</li>
+                    <li>• This provides immutable proof that your record hasn't been tampered with</li>
+                    <li>• Anyone can verify the authenticity using the transaction ID and file hash</li>
+                    <li>• The blockchain verification is permanent and cannot be altered</li>
+                  </ul>
+                </div>
               </div>
             </motion.div>
           </motion.div>
